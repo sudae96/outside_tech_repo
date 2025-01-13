@@ -137,7 +137,7 @@ add_action( 'widgets_init', 'outside_widgets_init' );
 /**
  * Enqueue scripts and styles.
  */
-function outside_scripts() {
+function outsidetech_scripts() {
 	wp_enqueue_style( 'outside-style', get_stylesheet_uri(), array(), _S_VERSION );
 	wp_style_add_data( 'outside-style', 'rtl', 'replace' );
 
@@ -147,19 +147,30 @@ function outside_scripts() {
 		wp_enqueue_script( 'comment-reply' );
 	}
 
-	// Slick SLider
-	wp_enqueue_style('theme-slick-css', get_template_directory_uri() . '/assets/slick/slick.css');
-	wp_enqueue_script('theme-slick-js', get_template_directory_uri() . '/assets/slick/slick.min.js', '', null, true);
+	if (is_page_template("template-pages/events-page.php")) {
+		// Style for Events page
+		wp_enqueue_style('events-style', get_template_directory_uri() . '/assets/css/event-frontend.css');
 
-	wp_enqueue_script( 'theme-script', get_template_directory_uri() . '/js/script.js', array('jquery'), '0.1', true );
-	$js_obj = array(
-		'ajax_url' => admin_url('admin-ajax.php'),
-		'ajax_nonce' => wp_create_nonce('ajax_nonce'),
-		'ajax_loader'=> get_template_directory_uri() . '/assets/img/ajax-loader.gif'
-	);
-	wp_localize_script('theme-script', 'js_obj', $js_obj);
+		// Slick SLider
+		wp_enqueue_style('theme-slick-css', get_template_directory_uri() . '/assets/slick/slick.css');
+		wp_enqueue_script('theme-slick-js', get_template_directory_uri() . '/assets/slick/slick.min.js', '', null, true);
+		
+		// Scripts for events page template
+		wp_enqueue_script( 'theme-script', get_template_directory_uri() . '/js/script.js', array('jquery'), '0.1', true );
+		$js_obj = array(
+			'ajax_url' => admin_url('admin-ajax.php'),
+			'ajax_nonce' => wp_create_nonce('ajax_nonce'),
+			'ajax_loader'=> get_template_directory_uri() . '/assets/img/ajax-loader.gif'
+		);
+		wp_localize_script('theme-script', 'js_obj', $js_obj);
+	}
 }
-add_action( 'wp_enqueue_scripts', 'outside_scripts' );
+add_action( 'wp_enqueue_scripts', 'outsidetech_scripts' );
+
+function outsidetech_backend_scripts() {
+	wp_enqueue_style('events-backend-style', get_template_directory_uri() . '/assets/css/event-backend.css');
+}
+add_action( 'admin_enqueue_scripts', 'outsidetech_backend_scripts' );
 
 /**
  * Implement the Custom Header feature.

@@ -12,14 +12,99 @@ class EventFunction
 
     public function init()
     {
-
+        // to add the events post type meta boxes and save
         add_action('add_meta_boxes', array( $this, 'event_options' ));
         add_action('save_post', array( $this, 'save_metabox_configuration' ));
 
+        // Ajax Pagination
         add_action('wp_ajax_nopriv_ajax_pagination', [$this, 'ajax_pagination_template']);
         add_action('wp_ajax_ajax_pagination', [$this, 'ajax_pagination_template']);
 
+        // Shortcode to display the search events widget
         add_shortcode('ot_event_search', array($this, 'event_search_widget'));
+
+        // Add Events Settings Sub menu under the Events Post Type Menu
+        add_action('admin_menu', [$this, 'add_events_submenu']);
+        add_action('admin_post_events_settings_save', array( $this, 'events_settings_save' ));
+    }
+
+    function events_settings_save() {
+
+        if ( current_user_can('manage_options') ) {
+            if(!empty($_POST) && wp_verify_nonce( $_POST['events_settings_nonce_field'], 'events_settings_nonce' )) {	
+                $events_shortcode = array();
+
+                //Remove Unnecessary Fields From The Array
+                if(isset($_POST['events_settings_nonce_field'])){
+                    unset($_POST['events_settings_nonce_field']);
+                }
+                if(isset($_POST['_wp_http_referer'])){
+                    unset($_POST['_wp_http_referer']);
+                }
+                if(isset($_POST['action'])){
+                    unset($_POST['action']);
+                }
+
+                //Strip Slashes Deep Inside The array
+                $events_shortcode = stripslashes_deep($this->sanitize_array($_POST));
+
+                update_option('events_shortcode',$events_shortcode);
+                wp_redirect(admin_url().'admin.php?page=events-settings&message=1');
+            }
+        }
+    }
+
+    public function add_events_submenu() {
+        add_submenu_page(
+            'edit.php?post_type=ss_events', 
+            'Events Settings',                 
+            'Events Settings',                
+            'manage_options',              
+            'events-settings',                 
+            [$this, 'events_settings_page_callback']    
+        );
+    }
+
+    public function events_settings_page_callback() {
+        echo '<div class="wrap">';
+        echo '<h1>Evemts Settings</h1>';
+        $events_shortcode = get_option( 'events_shortcode' );
+        ?>
+        
+        <div class="wrap">
+            <?php
+            if(isset($_GET['message']) && $_GET['message'] =='1'){ ?>
+                <div class="notice notice-success is-dismissible">
+                    <p>Settings saved successfully</p>
+                </div>
+            <?php } ?>
+
+            <?php
+            if(isset($_GET['message']) && $_GET['message'] == '0'){ ?>
+                <div class="notice notice-error is-dismissible">
+                    <p>Settings save failed.</p>
+                </div>
+            <?php } ?>
+
+            <div class="content">
+                <form action="<?php echo admin_url( 'admin-post.php' ); ?>" method="post">
+                    <?php wp_nonce_field('events_settings_nonce', 'events_settings_nonce_field'); ?>
+                    <input type="hidden" name="action" value="events_settings_save"/>
+
+                    <div class="ot-field-wrap">
+                        <label>Search Events Shortcode</label>
+                        <textarea rows="3" name="events_shortcode"><?php echo isset($events_shortcode) && !empty($events_shortcode) ? $events_shortcode['events_shortcode'] : '';  ?></textarea>
+                    </div>
+
+                    <div class="ot-notice">Note - you can add parameters on shortcode [ot_event_search posts_per_page="2"] to display only 2 posts per page</div>    
+
+                    <button class="button-primary">Save Settings</button>
+                </form>
+            </div>
+        </div>
+
+        <?php
+        echo '</div>';
     }
    
     function event_options() {
@@ -57,7 +142,7 @@ class EventFunction
 
             <div class="ot-field-wrap">
                 <label>Description</label>
-                <textarea name="options[description]"><?php echo isset($description) && !empty($description) ? $description : null;  ?></textarea>
+                <textarea rows="4" name="options[description]"><?php echo isset($description) && !empty($description) ? $description : null;  ?></textarea>
             </div>
 
             <div class="ot-field-wrap">
@@ -152,6 +237,13 @@ class EventFunction
 
     public function event_search_widget($atts) {
         ob_start();
+        $atts = shortcode_atts(
+            array(
+                'posts_per_page' => 3, 
+            ),
+            $atts,
+            'ot_event_search'
+        );
         ?>
         <div class="search-events-section">
             <div class="search-events-inner">
@@ -161,7 +253,7 @@ class EventFunction
                     </form>
                 </div>
 
-                <?php $this->ajax_pagination_template(); ?>
+                <?php $this->ajax_pagination_template($atts); ?>
             </div>
         </div>        
         <?php
@@ -170,8 +262,8 @@ class EventFunction
         return $html;
     }
 
-    function ajax_pagination_template() {
-	
+    function ajax_pagination_template($atts) {
+        $post_per_page = isset($atts['posts_per_page']) && !empty($atts['posts_per_page']) ? $atts['posts_per_page'] : ($_POST['posts_per_page'] ? $_POST['posts_per_page'] : 3);
         ?>
         <div id="ajax-posts">
             <div class="events-wrap">
@@ -180,7 +272,7 @@ class EventFunction
             
             $args1 = array(
                 'post_type'      => 'ss_events', 
-                'posts_per_page' => 3,      
+                'posts_per_page' => $post_per_page,      
                 'paged'          => $paged,
                 'orderby' => 'title',
                 'order' => 'ASC',
@@ -190,6 +282,7 @@ class EventFunction
                 $args1['s'] = $_GET['event_serch'];
             }
             $search_events_query = new WP_Query($args1);
+            
             if ($search_events_query->have_posts()) :
                 while ($search_events_query->have_posts()) : $search_events_query->the_post();  
                     if ( $option_values = get_post_meta(get_the_ID(), 'option_values', false) ) {
@@ -328,7 +421,7 @@ class EventFunction
             if ($total_pages > 1) {
             ?>
             <div class="pagination-wrap">
-                <div class="pagination">
+                <div class="pagination" data-postsperpage="<?php echo $post_per_page; ?>">
                     <?php
                     
                         for ($i = 1; $i <= $total_pages; $i++) {

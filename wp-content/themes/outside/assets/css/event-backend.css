@@ -1,0 +1,19 @@
+.ot-field-wrap {
+    margin-bottom: 20px;
+}
+
+.ot-field-wrap label {
+    display: inline-block;
+    width: 12%;
+}
+
+.ot-field-wrap input,
+.ot-field-wrap textarea {
+    width: 44%;
+}
+
+.ot-notice {
+    margin-bottom: 20px;
+    font-size: 16px;
+    font-weight: 600;
+}

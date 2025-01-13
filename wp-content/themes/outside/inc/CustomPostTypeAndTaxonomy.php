@@ -53,7 +53,7 @@ class CustomPostTypeAndTaxonomy
             'label' => __($singular_name, $this->text_domain),
             'description' => __($singular_name, $this->text_domain),
             'labels' => $labels,
-            'supports' => array('title', 'page-attributes', 'thumbnail', 'excerpt', 'revisions'),
+            'supports' => array('title', 'page-attributes', 'thumbnail', 'revisions'),
             'show_in_rest' => false,
             'hierarchical' => true,
             'public' => true,

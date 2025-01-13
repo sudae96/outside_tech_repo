@@ -44,6 +44,7 @@ jQuery(document).ready(function ($ = jQuery) {
         e.preventDefault();
 
         var page = $(this).data('page');
+        var posts_per_page = $(this).parent().data('postsperpage');
         var $this = $(this);
 
         $.ajax({
@@ -52,9 +53,10 @@ jQuery(document).ready(function ($ = jQuery) {
             data: {
                 action: 'ajax_pagination',
                 paged: page,
+                posts_per_page: posts_per_page
             },
             beforeSend: function (xhr) {
-                $('#ajax-posts').html('<img src="'+ajax_loader+'"/><p>Loading...</p>');
+                $('#ajax-posts').html('<div class="ajax-loader"><img src="'+ajax_loader+'"/><p>Loading...</p></div>');
             },
             success: function (res) {
                 console.log(res)
